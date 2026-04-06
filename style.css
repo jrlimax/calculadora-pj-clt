@@ -50,6 +50,32 @@ body {
     padding: 2.5rem 1.5rem 3rem;
 }
 
+/* ── Ads laterais ───────────────────────────────────────── */
+
+.ads-side {
+    position: fixed;
+    top: 148px;
+    width: 120px;
+    min-height: 600px;
+    z-index: 5;
+}
+
+.ads-left {
+    left: 10px;
+}
+
+.ads-right {
+    right: 10px;
+}
+
+.ads-side .adsbygoogle {
+    width: 120px;
+    min-height: 600px;
+    border: 1px solid rgba(51, 65, 85, 0.45);
+    border-radius: var(--radius-sm);
+    background: rgba(15, 23, 42, 0.35);
+}
+
 /* ── Header ──────────────────────────────────────────────── */
 
 header {
@@ -849,5 +875,11 @@ select option {
 
     .breakeven {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1380px) {
+    .ads-side {
+        display: none;
     }
 }
