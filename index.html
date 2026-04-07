@@ -120,6 +120,29 @@
                     </select>
                 </div>
                 <div class="input-group">
+                    <label for="proLabore">Pró-labore mensal</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">R$</span>
+                        <input type="number" id="proLabore" placeholder="1.621,00" step="0.01" min="0" value="1621">
+                    </div>
+                    <span class="input-hint">INSS do sócio: 11% sobre o pró-labore, limitado ao teto previdenciário</span>
+                </div>
+                <div class="input-group">
+                    <label for="encargoPatronal">Encargo patronal (empresa)</label>
+                    <select id="encargoPatronal">
+                        <option value="0">Sem INSS patronal (Simples fora do Anexo IV)</option>
+                        <option value="0.20">INSS patronal 20% (Lucro Presumido/Real ou Simples Anexo IV)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="adicionaisPatronais">Adicionais previdenciários (%)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0" value="0">
+                    </div>
+                    <span class="input-hint">Use para RAT/FAP e terceiros, quando aplicável</span>
+                </div>
+                <div class="input-group">
                     <label for="contador">Custo do contador mensal</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">R$</span>
@@ -137,7 +160,7 @@
         <section class="results-section" id="results"></section>
 
         <footer class="disclaimer" id="disclaimer">
-            <p>Tabelas INSS e IRRF 2026. IR aplica desconto progressivo (Lei 15.270/2025): isenção total até R$ 5.000 de base, parcial até R$ 7.350. FGTS incluso para comparação — não é saque imediato. Consulte um contador para análise completa.</p>
+            <p>Tabelas INSS e IRRF 2026. IR aplica desconto progressivo (Lei 15.270/2025): isenção total até R$ 5.000 de base, parcial até R$ 7.350. No cenário PJ, INSS do sócio e encargos patronais são parametrizáveis. FGTS incluso para comparação — não é saque imediato. Consulte um contador para análise completa.</p>
         </footer>
     </div>
 

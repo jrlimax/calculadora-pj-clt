@@ -8,6 +8,7 @@
     const SALARIO_MINIMO = 1621.00;
     const TETO_INSS = 988.09;
     const INSS_PJ_ALIQUOTA = 0.11;
+    const TETO_PREVIDENCIARIO = 8475.55;
 
     const FAIXAS_INSS = [
         { limite: 1621.00,  aliquota: 0.075 },
@@ -79,6 +80,18 @@
         return { irrf, badge, badgeClass, bruto, desconto, base };
     }
 
+    /** INSS do sócio sobre pró-labore (11% com teto previdenciário) */
+    function calcINSSProLabore(proLabore) {
+        const base = Math.max(0, proLabore);
+        return Math.min(base * INSS_PJ_ALIQUOTA, TETO_PREVIDENCIARIO * INSS_PJ_ALIQUOTA);
+    }
+
+    /** Encargos patronais opcionais da empresa sobre o pró-labore */
+    function calcEncargosPatronais(proLabore, aliquotaBase, aliquotaAdicional) {
+        const totalAliquota = Math.max(0, (aliquotaBase || 0) + (aliquotaAdicional || 0));
+        return Math.max(0, proLabore) * totalAliquota;
+    }
+
     /** Formata valor como moeda BRL */
     function fmt(valor) {
         return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -90,6 +103,9 @@
             salarioBruto:     parseFloat(document.getElementById('salarioBruto').value) || 0,
             faturamento:      parseFloat(document.getElementById('faturamento').value) || 0,
             regime:           parseFloat(document.getElementById('regime').value),
+            proLabore:        parseFloat(document.getElementById('proLabore').value) || 0,
+            encargoPatronal:  parseFloat(document.getElementById('encargoPatronal').value) || 0,
+            adicionaisPatronais: (parseFloat(document.getElementById('adicionaisPatronais').value) || 0) / 100,
             contador:         parseFloat(document.getElementById('contador').value) || 0,
             vr:               parseFloat(document.getElementById('vr').value) || 0,
             vtDetalhado:      document.getElementById('vtToggle').getAttribute('aria-checked') === 'true',
@@ -138,9 +154,13 @@
     }
 
     /** Faturamento PJ mínimo para empatar com CLT */
-    function calcBreakevenPJ(cltMesEquivalente, regime, contador) {
-        const pjINSS = SALARIO_MINIMO * INSS_PJ_ALIQUOTA;
-        return (cltMesEquivalente + contador + pjINSS) / (1 - regime);
+    function calcBreakevenPJ(cltMesEquivalente, regime, contador, proLabore, encargoPatronal, adicionaisPatronais) {
+        const pjINSSSocio = calcINSSProLabore(proLabore);
+        const pjIRRFSocio = calcIRRF(proLabore, pjINSSSocio).irrf;
+        const pjPatronal = calcEncargosPatronais(proLabore, encargoPatronal, adicionaisPatronais);
+        const divisor = 1 - regime;
+        if (divisor <= 0) return Infinity;
+        return (cltMesEquivalente + contador + pjINSSSocio + pjIRRFSocio + pjPatronal) / divisor;
     }
 
     /** Salário CLT mínimo para empatar com PJ (busca binária) */
@@ -198,9 +218,12 @@
         const cltMesEquivalente = cltTotalAnual / 12;
 
         // ── PJ Mensal ───────────────────────────────────────
-        const pjImposto      = inp.faturamento * inp.regime;
-        const pjINSS         = SALARIO_MINIMO * INSS_PJ_ALIQUOTA;
-        const pjLiquidoMensal = inp.faturamento - pjImposto - inp.contador - pjINSS;
+        const proLaboreCalculado = Math.max(inp.proLabore, SALARIO_MINIMO);
+        const pjImposto          = inp.faturamento * inp.regime;
+        const pjINSSSocio        = calcINSSProLabore(proLaboreCalculado);
+        const pjIRRFSocio        = calcIRRF(proLaboreCalculado, pjINSSSocio);
+        const pjPatronal         = calcEncargosPatronais(proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais);
+        const pjLiquidoMensal    = inp.faturamento - pjImposto - inp.contador - pjINSSSocio - pjIRRFSocio.irrf - pjPatronal;
         const pjTotalAnual    = pjLiquidoMensal * 12;
 
         // ── Veredicto ───────────────────────────────────────
@@ -225,7 +248,10 @@
             },
             pj: {
                 imposto: pjImposto,
-                inss: pjINSS,
+                proLabore: proLaboreCalculado,
+                inssSocio: pjINSSSocio,
+                irrfSocio: pjIRRFSocio,
+                patronal: pjPatronal,
                 liquidoMensal: pjLiquidoMensal,
                 totalAnual: pjTotalAnual,
             },
@@ -233,7 +259,7 @@
                 pjVence,
                 diffMensal: Math.abs(diffMensal),
                 diffAnual: Math.abs(diffAnual),
-                breakevenPJ: calcBreakevenPJ(cltMesEquivalente, inp.regime, inp.contador),
+                breakevenPJ: calcBreakevenPJ(cltMesEquivalente, inp.regime, inp.contador, proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais),
                 breakevenCLT: calcBreakevenCLT(pjLiquidoMensal, inp.vr, vtTotal, inp.planoSaude, inp.outrosBeneficios),
             },
         });
@@ -302,8 +328,11 @@
              +    '<div class="card-title card-title--pj">PJ — Mensal</div>'
              +    lineItem('Faturamento bruto', inp.faturamento)
              +    lineItem('Imposto (' + regimePercent + ')', pj.imposto, { negative: true })
+               +    lineItem('Pró-labore', pj.proLabore)
+               +    lineItem('INSS sócio (11%)', pj.inssSocio, { negative: true })
+               +    lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass })
+               +    lineItem('Encargos patronais', pj.patronal, { negative: true })
              +    lineItem('Contador', inp.contador, { negative: true })
-             +    lineItem('INSS pró-labore', pj.inss, { negative: true })
              +    lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
              + '</div>';
 
@@ -461,8 +490,11 @@
         add('PJ — MENSAL', '');
         add('Faturamento bruto', num(d.inp.faturamento));
         add('Imposto (' + regimeLabel + ')', '-' + num(d.pj.imposto));
+        add('Pró-labore', num(d.pj.proLabore));
+        add('INSS sócio (11%)', '-' + num(d.pj.inssSocio));
+        add('IRRF pró-labore (' + d.pj.irrfSocio.badge + ')', '-' + num(d.pj.irrfSocio.irrf));
+        add('Encargos patronais', '-' + num(d.pj.patronal));
         add('Contador', '-' + num(d.inp.contador));
-        add('INSS pró-labore', '-' + num(d.pj.inss));
         add('Líquido mensal PJ', num(d.pj.liquidoMensal));
         blank();
 
