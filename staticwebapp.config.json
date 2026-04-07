@@ -3,9 +3,17 @@
     "X-Content-Type-Options": "nosniff"
   },
   "mimeTypes": {
-    ".json": "application/json"
+    ".json": "application/json",
+    ".txt": "text/plain"
   },
   "routes": [
+    {
+      "route": "/ads.txt",
+      "headers": {
+        "Cache-Control": "public, max-age=86400",
+        "Content-Type": "text/plain; charset=utf-8"
+      }
+    },
     {
       "route": "/*.html",
       "headers": {
