@@ -106,88 +106,104 @@
                     <h2>Pessoa Jurídica</h2>
                 </div>
                 <div class="input-group">
-                    <label for="faturamento">Faturamento bruto mensal</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="faturamento" placeholder="0,00" step="0.01" min="0">
+                    <div class="vt-header">
+                        <label>Modo PJ</label>
+                        <div class="toggle" id="pjToggle" role="switch" aria-checked="false" tabindex="0">
+                            <span class="toggle-label">Detalhado</span>
+                            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                        </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label for="regime">Regime tributário</label>
-                    <select id="regime">
-                        <option value="simples">Simples Nacional</option>
-                        <option value="presumido">Lucro Presumido</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="anexoSimples">Anexo do Simples (quando aplicável)</label>
-                    <select id="anexoSimples">
-                        <option value="III">Anexo III</option>
-                        <option value="V">Anexo V</option>
-                        <option value="IV">Anexo IV</option>
-                        <option value="I">Anexo I</option>
-                        <option value="II">Anexo II</option>
-                    </select>
-                    <span class="input-hint">Para Simples, a alíquota efetiva usa RBT12 e faixa do anexo selecionado</span>
-                </div>
-                <div class="input-group">
-                    <label for="rbt12">RBT12 (faturamento acumulado 12 meses)</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="rbt12" placeholder="0,00" step="0.01" min="0" value="0">
+
+                <div id="pjSimples">
+                    <div class="input-group">
+                        <label for="faturamento">Faturamento bruto mensal</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="faturamento" placeholder="0,00" step="0.01" min="0">
+                        </div>
                     </div>
-                    <span class="input-hint">Se deixar zerado, usamos faturamento mensal × 12 como aproximação</span>
-                </div>
-                <div class="input-group">
-                    <label for="proLabore">Pró-labore mensal</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="proLabore" placeholder="1.621,00" step="0.01" min="0" value="1621">
+                    <div class="input-group">
+                        <label for="regime">Regime tributário</label>
+                        <select id="regime">
+                            <option value="simples">Simples Nacional</option>
+                            <option value="presumido">Lucro Presumido</option>
+                        </select>
+                        <span class="input-hint">No modo simples, usamos premissas automáticas para completar o cálculo</span>
                     </div>
-                    <span class="input-hint">INSS do sócio: 11% sobre o pró-labore, limitado ao teto previdenciário</span>
-                </div>
-                <div class="input-group">
-                    <label for="encargoPatronal">Encargo patronal (empresa)</label>
-                    <select id="encargoPatronal">
-                        <option value="0">Sem INSS patronal (Simples fora do Anexo IV)</option>
-                        <option value="0.20">INSS patronal 20% (Lucro Presumido/Real ou Simples Anexo IV)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="adicionaisPatronais">Adicionais previdenciários (%)</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">%</span>
-                        <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0" value="0">
-                    </div>
-                    <span class="input-hint">Use para RAT/FAP e terceiros, quando aplicável</span>
-                </div>
-                <div class="input-group">
-                    <label for="issAliquota">ISS no Lucro Presumido (%)</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">%</span>
-                        <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5" value="2">
+                    <div class="input-group">
+                        <label for="contador">Custo do contador mensal</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="contador" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label for="lucrosDistribuidos">Lucros distribuídos no mês</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="lucrosDistribuidos" placeholder="0,00" step="0.01" min="0" value="0">
+
+                <div id="pjDetalhado" class="hidden">
+                    <div class="input-group">
+                        <label for="anexoSimples">Anexo do Simples (quando aplicável)</label>
+                        <select id="anexoSimples">
+                            <option value="III">Anexo III</option>
+                            <option value="V">Anexo V</option>
+                            <option value="IV">Anexo IV</option>
+                            <option value="I">Anexo I</option>
+                            <option value="II">Anexo II</option>
+                        </select>
+                        <span class="input-hint">Para Simples, a alíquota efetiva usa RBT12 e faixa do anexo selecionado</span>
                     </div>
-                </div>
-                <div class="input-group">
-                    <label for="aliquotaLucros">Alíquota sobre lucros acima de R$ 50.000 (%)</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">%</span>
-                        <input type="number" id="aliquotaLucros" placeholder="0,00" step="0.01" min="0" value="0">
+                    <div class="input-group">
+                        <label for="rbt12">RBT12 (faturamento acumulado 12 meses)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="rbt12" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
+                        <span class="input-hint">Se deixar zerado, usamos faturamento mensal × 12 como aproximação</span>
                     </div>
-                    <span class="input-hint">Parâmetro para simular tributação de distribuição elevada</span>
-                </div>
-                <div class="input-group">
-                    <label for="contador">Custo do contador mensal</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="contador" placeholder="0,00" step="0.01" min="0" value="0">
+                    <div class="input-group">
+                        <label for="proLabore">Pró-labore mensal</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="proLabore" placeholder="1.621,00" step="0.01" min="0" value="1621">
+                        </div>
+                        <span class="input-hint">INSS do sócio: 11% sobre o pró-labore, limitado ao teto previdenciário</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="encargoPatronal">Encargo patronal (empresa)</label>
+                        <select id="encargoPatronal">
+                            <option value="0">Sem INSS patronal (Simples fora do Anexo IV)</option>
+                            <option value="0.20">INSS patronal 20% (Lucro Presumido/Real ou Simples Anexo IV)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="adicionaisPatronais">Adicionais previdenciários (%)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">%</span>
+                            <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
+                        <span class="input-hint">Use para RAT/FAP e terceiros, quando aplicável</span>
+                    </div>
+                    <div class="input-group">
+                        <label for="issAliquota">ISS no Lucro Presumido (%)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">%</span>
+                            <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5" value="2">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="lucrosDistribuidos">Lucros distribuídos no mês</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="lucrosDistribuidos" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="aliquotaLucros">Alíquota sobre lucros acima de R$ 50.000 (%)</label>
+                        <div class="input-wrapper">
+                            <span class="input-prefix">%</span>
+                            <input type="number" id="aliquotaLucros" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
+                        <span class="input-hint">Parâmetro para simular tributação de distribuição elevada</span>
                     </div>
                 </div>
             </div>

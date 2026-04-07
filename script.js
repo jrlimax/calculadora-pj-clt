@@ -221,6 +221,7 @@
         return {
             salarioBruto:     parseFloat(document.getElementById('salarioBruto').value) || 0,
             faturamento:      parseFloat(document.getElementById('faturamento').value) || 0,
+            pjDetalhado:      document.getElementById('pjToggle').getAttribute('aria-checked') === 'true',
             regime:           document.getElementById('regime').value,
             anexoSimples:     document.getElementById('anexoSimples').value,
             rbt12:            parseFloat(document.getElementById('rbt12').value) || 0,
@@ -239,6 +240,21 @@
             planoSaude:       parseFloat(document.getElementById('planoSaude').value) || 0,
             outrosBeneficios: parseFloat(document.getElementById('outrosBeneficios').value) || 0,
         };
+    }
+
+    function resolvePjConfig(inp) {
+        const cfg = Object.assign({}, inp);
+        if (!inp.pjDetalhado) {
+            cfg.anexoSimples = 'III';
+            cfg.rbt12 = inp.faturamento > 0 ? inp.faturamento * 12 : 0;
+            cfg.proLabore = SALARIO_MINIMO;
+            cfg.encargoPatronal = inp.regime === 'presumido' ? 0.20 : 0;
+            cfg.adicionaisPatronais = 0;
+            cfg.issAliquota = inp.regime === 'presumido' ? 0.02 : 0;
+            cfg.lucrosDistribuidos = 0;
+            cfg.aliquotaLucros = 0;
+        }
+        return cfg;
     }
 
     /* ══════════════════════════════════════════════════════
@@ -283,7 +299,8 @@
         let hi = 500000;
         for (let i = 0; i < 100; i++) {
             const mid = (lo + hi) / 2;
-            const pjMid = calcPjMensal(mid, inp);
+            const inpMid = Object.assign({}, inp, { faturamento: mid });
+            const pjMid = calcPjMensal(mid, resolvePjConfig(inpMid));
             if (pjMid.liquidoMensal < cltMesEquivalente) lo = mid;
             else hi = mid;
         }
@@ -345,7 +362,8 @@
         const cltMesEquivalente = cltTotalAnual / 12;
 
         // ── PJ Mensal ───────────────────────────────────────
-        const pjCalc = calcPjMensal(inp.faturamento, inp);
+        const pjCfg = resolvePjConfig(inp);
+        const pjCalc = calcPjMensal(inp.faturamento, pjCfg);
         const pjLiquidoMensal = pjCalc.liquidoMensal;
         const pjTotalAnual = pjCalc.totalAnual;
 
@@ -355,7 +373,7 @@
         const pjVence    = diffMensal > 0;
 
         renderResults({
-            inp,
+            inp: Object.assign({}, inp, pjCfg),
             clt: {
                 inss: cltINSS,
                 irrf: cltIRRF,
@@ -454,6 +472,9 @@
         html += '<div class="result-card">'
              +    '<div class="card-title card-title--pj">PJ — Mensal</div>'
                +    '<div class="line-item"><span class="label">Regime</span><span class="value">' + esc(regimeLabel) + '</span></div>'
+                         +    (inp.pjDetalhado
+                                        ? ''
+                                  : '<div class="line-item"><span class="label">Modo simples</span><span class="value">Premissas automáticas ativas</span></div>')
              +    lineItem('Faturamento bruto', inp.faturamento)
                +    lineItem('Tributos do regime (efetiva ' + (pj.tributos.aliquotaEfetiva * 100).toFixed(2).replace('.', ',') + '%)', pj.tributos.total, { negative: true })
                +    lineItem('Pró-labore', pj.proLabore)
@@ -465,7 +486,7 @@
              +    lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
              + '</div>';
 
-           if (inp.regime === 'presumido') {
+        if (inp.regime === 'presumido' && inp.pjDetalhado) {
               html += '<div class="result-card">'
                   +    '<div class="card-title card-title--pj">PJ — Detalhe Lucro Presumido</div>'
                   +    lineItem('IRPJ (15%)', pj.tributos.irpj, { negative: true })
@@ -580,6 +601,24 @@
     vtToggle.addEventListener('click', toggleVt);
     vtToggle.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleVt(); }
+    });
+
+    // ── Toggle PJ simples / detalhado ────────────────────
+    var pjToggle = document.getElementById('pjToggle');
+    var pjSimples = document.getElementById('pjSimples');
+    var pjDetalhado = document.getElementById('pjDetalhado');
+
+    function togglePj() {
+        var isOn = pjToggle.getAttribute('aria-checked') === 'true';
+        pjToggle.setAttribute('aria-checked', String(!isOn));
+        pjToggle.classList.toggle('active', !isOn);
+        pjSimples.classList.toggle('hidden', !isOn);
+        pjDetalhado.classList.toggle('hidden', isOn);
+    }
+
+    pjToggle.addEventListener('click', togglePj);
+    pjToggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePj(); }
     });
 
     /* ══════════════════════════════════════════════════════
