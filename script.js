@@ -9,6 +9,7 @@
     const TETO_INSS = 988.09;
     const INSS_PJ_ALIQUOTA = 0.11;
     const TETO_PREVIDENCIARIO = 8475.55;
+    const DESCONTO_SIMPLIFICADO = 607.20;
 
     const FAIXAS_INSS = [
         { limite: 1621.00,  aliquota: 0.075 },
@@ -88,7 +89,8 @@
 
     /** IRRF com desconto progressivo (Lei 15.270/2025) */
     function calcIRRF(salarioBruto, inss) {
-        const base = salarioBruto - inss;
+        const deducao = Math.max(inss, DESCONTO_SIMPLIFICADO);
+        const base = salarioBruto - deducao;
         if (base <= 0) return { irrf: 0, badge: 'isento (lei 2026)', badgeClass: 'badge--isento', bruto: 0, desconto: 0, base: 0 };
 
         // Etapa 1 — imposto bruto pela tabela progressiva
@@ -100,17 +102,17 @@
             }
         }
 
-        // Etapa 2 — desconto progressivo
+        // Etapa 2 — desconto Lei 15.270/2025 (sobre rendimento bruto)
         let desconto = 0;
         let badge = '';
         let badgeClass = '';
 
-        if (base <= 5000) {
+        if (salarioBruto <= 5000) {
             desconto = bruto;
             badge = 'isento (lei 2026)';
             badgeClass = 'badge--isento';
-        } else if (base <= 7350) {
-            desconto = bruto * (7350 - base) / (7350 - 5000);
+        } else if (salarioBruto <= 7350) {
+            desconto = Math.max(0, 978.62 - (0.133145 * salarioBruto));
             badge = 'desconto parcial';
             badgeClass = 'badge--parcial';
         } else {
@@ -219,14 +221,14 @@
             proLabore:        parseFloat(document.getElementById('proLabore').value) || 0,
             encargoPatronal:  parseFloat(document.getElementById('encargoPatronal').value) || 0,
             adicionaisPatronais: (parseFloat(document.getElementById('adicionaisPatronais').value) || 0) / 100,
-            issAliquota:      (parseFloat(document.getElementById('issAliquota').value) || 0) / 100,
+            issAliquota:      (parseFloat(document.getElementById('issAliquota').value) || 2) / 100,
             contador:         parseFloat(document.getElementById('contador').value) || 0,
             vtDetalhado:      document.getElementById('vtToggle').getAttribute('aria-checked') === 'true',
             vr:               parseFloat(document.getElementById('vr').value) || 0,
             vrDiario:         parseFloat(document.getElementById('vrDiario').value) || 0,
             vtMensal:         parseFloat(document.getElementById('vtMensal').value) || 0,
             vtPassagem:       parseFloat(document.getElementById('vtPassagem').value) || 0,
-            vtDias:           parseFloat(document.getElementById('vtDias').value) || 0,
+            vtDias:           parseFloat(document.getElementById('vtDias').value) || 22,
             planoSaude:       parseFloat(document.getElementById('planoSaude').value) || 0,
             outrosBeneficios: parseFloat(document.getElementById('outrosBeneficios').value) || 0,
         };
@@ -317,6 +319,12 @@
 
         if (inp.salarioBruto <= 0 && inp.faturamento <= 0) {
             alert('Informe ao menos o salário CLT ou o faturamento PJ.');
+            return;
+        }
+
+        if (inp.salarioBruto > 0 && inp.salarioBruto < SALARIO_MINIMO) {
+            alert('O salário CLT não pode ser inferior ao salário mínimo de ' + fmt(SALARIO_MINIMO) + '.');
+            document.getElementById('salarioBruto').focus();
             return;
         }
 
@@ -564,11 +572,38 @@
     }
 
     /* ══════════════════════════════════════════════════════
+       Limpar campos
+       ══════════════════════════════════════════════════════ */
+
+    function limparCampos() {
+        var ids = [
+            'salarioBruto', 'faturamento', 'vr', 'vrDiario', 'vtMensal',
+            'vtPassagem', 'vtDias', 'planoSaude', 'outrosBeneficios',
+            'contador', 'rbt12', 'proLabore', 'adicionaisPatronais', 'issAliquota'
+        ];
+        for (var i = 0; i < ids.length; i++) {
+            document.getElementById(ids[i]).value = '';
+        }
+        document.getElementById('regime').value = 'simples';
+        document.getElementById('anexoSimples').value = 'III';
+        document.getElementById('encargoPatronal').value = '0';
+
+        // Reset resultados
+        var section = document.getElementById('results');
+        section.innerHTML = '';
+        section.classList.remove('visible');
+        document.getElementById('disclaimer').classList.remove('visible');
+        document.getElementById('btnExportar').classList.add('hidden');
+        window.__lastCalc = null;
+    }
+
+    /* ══════════════════════════════════════════════════════
        Event listeners
        ══════════════════════════════════════════════════════ */
 
     document.getElementById('btnCalcular').addEventListener('click', calcular);
     document.getElementById('btnExportar').addEventListener('click', exportarPlanilha);
+    document.getElementById('btnLimpar').addEventListener('click', limparCampos);
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') calcular();
@@ -578,6 +613,7 @@
     var vtToggle = document.getElementById('vtToggle');
     var vtSimples = document.getElementById('vtSimples');
     var vtDetalhado = document.getElementById('vtDetalhado');
+    var vtModeLabel = document.getElementById('vtModeLabel');
 
     function toggleVt() {
         var isOn = vtToggle.getAttribute('aria-checked') === 'true';
@@ -585,6 +621,7 @@
         vtToggle.classList.toggle('active', !isOn);
         vtSimples.classList.toggle('hidden', !isOn);
         vtDetalhado.classList.toggle('hidden', isOn);
+        vtModeLabel.textContent = !isOn ? 'Diário' : 'Mensal';
     }
 
     vtToggle.addEventListener('click', toggleVt);

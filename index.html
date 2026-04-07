@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260407">
+    <link rel="stylesheet" href="style.css?v=20260408b">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5380924083549982" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -54,45 +54,44 @@
                 </div>
                 <div class="input-group">
                     <div class="vt-header">
-                        <label>VR / VA mensal</label>
+                        <label id="vtModeLabel">Mensal</label>
                         <div class="toggle" id="vtToggle" role="switch" aria-checked="false" tabindex="0">
                             <span class="toggle-label">Detalhado</span>
                             <div class="toggle-track"><div class="toggle-thumb"></div></div>
                         </div>
                     </div>
+                </div>
 
                     <div id="vtSimples">
                         <div class="input-group" style="margin-bottom:0.8rem">
                             <label for="vr">VR / VA mensal</label>
                             <div class="input-wrapper">
                                 <span class="input-prefix">R$</span>
-                                <input type="number" id="vr" placeholder="0,00" step="0.01" min="0" value="0">
+                                <input type="number" id="vr" placeholder="0,00" step="0.01" min="0">
                             </div>
                         </div>
                         <div class="input-group">
                             <label for="vtMensal">VT mensal</label>
                             <div class="input-wrapper">
                                 <span class="input-prefix">R$</span>
-                                <input type="number" id="vtMensal" placeholder="0,00" step="0.01" min="0" value="0">
+                                <input type="number" id="vtMensal" placeholder="0,00" step="0.01" min="0">
                             </div>
-                            <span class="input-hint">Valores totais mensais que você recebe</span>
                         </div>
                     </div>
 
                     <div id="vtDetalhado" class="hidden">
                         <div class="input-group" style="margin-bottom:0.8rem">
-                            <label for="vrDiario">VR / VA por dia</label>
+                            <label for="vrDiario">VR / VA diário</label>
                             <div class="input-wrapper">
                                 <span class="input-prefix">R$</span>
-                                <input type="number" id="vrDiario" placeholder="25,00" step="0.01" min="0" value="0">
+                                <input type="number" id="vrDiario" placeholder="25,00" step="0.01" min="0">
                             </div>
-                            <span class="input-hint">Diário × dias úteis = VR/VA mensal</span>
                         </div>
                         <div class="input-group" style="margin-bottom:0.8rem">
                             <label for="vtPassagem">Passagem por trecho (ida)</label>
                             <div class="input-wrapper">
                                 <span class="input-prefix">R$</span>
-                                <input type="number" id="vtPassagem" placeholder="4,50" step="0.01" min="0" value="0">
+                                <input type="number" id="vtPassagem" placeholder="4,50" step="0.01" min="0">
                             </div>
                             <span class="input-hint">Ida e volta calculado automaticamente</span>
                         </div>
@@ -100,24 +99,22 @@
                             <label for="vtDias">Dias úteis no mês</label>
                             <div class="input-wrapper">
                                 <span class="input-prefix">📅</span>
-                                <input type="number" id="vtDias" placeholder="22" step="1" min="0" max="31" value="22">
+                                <input type="number" id="vtDias" placeholder="22" step="1" min="0" max="31">
                             </div>
-                            <span class="input-hint">VT = passagem × 2 × dias &nbsp;|&nbsp; VR/VA = diário × dias</span>
                         </div>
                     </div>
-                </div>
                 <div class="input-group">
                     <label for="planoSaude">Plano de saúde mensal</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">R$</span>
-                        <input type="number" id="planoSaude" placeholder="0,00" step="0.01" min="0" value="0">
+                        <input type="number" id="planoSaude" placeholder="0,00" step="0.01" min="0">
                     </div>
                 </div>
                 <div class="input-group">
                     <label for="outrosBeneficios">Outros benefícios mensais</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">R$</span>
-                        <input type="number" id="outrosBeneficios" placeholder="0,00" step="0.01" min="0" value="0">
+                        <input type="number" id="outrosBeneficios" placeholder="0,00" step="0.01" min="0">
                     </div>
                 </div>
             </div>
@@ -146,7 +143,7 @@
                     <label for="contador">Custo do contador mensal</label>
                     <div class="input-wrapper">
                         <span class="input-prefix">R$</span>
-                        <input type="number" id="contador" placeholder="0,00" step="0.01" min="0" value="0">
+                        <input type="number" id="contador" placeholder="0,00" step="0.01" min="0">
                     </div>
                 </div>
 
@@ -177,7 +174,7 @@
                         <label for="rbt12">RBT12 (faturamento acumulado 12 meses)</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">R$</span>
-                            <input type="number" id="rbt12" placeholder="0,00" step="0.01" min="0" value="0">
+                            <input type="number" id="rbt12" placeholder="0,00" step="0.01" min="0">
                         </div>
                         <span class="input-hint">Se deixar zerado, usamos faturamento mensal × 12 como aproximação</span>
                     </div>
@@ -185,7 +182,7 @@
                         <label for="proLabore">Pró-labore mensal</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">R$</span>
-                            <input type="number" id="proLabore" placeholder="1.621,00" step="0.01" min="0" value="1621">
+                            <input type="number" id="proLabore" placeholder="1.621,00" step="0.01" min="0">
                         </div>
                         <span class="input-hint">INSS do sócio: 11% sobre o pró-labore, limitado ao teto previdenciário</span>
                     </div>
@@ -200,7 +197,7 @@
                         <label for="adicionaisPatronais">Adicionais previdenciários (%)</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">%</span>
-                            <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0" value="0">
+                            <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0">
                         </div>
                         <span class="input-hint">Use para RAT/FAP e terceiros, quando aplicável</span>
                     </div>
@@ -208,7 +205,7 @@
                         <label for="issAliquota">ISS no Lucro Presumido (%)</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">%</span>
-                            <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5" value="2">
+                            <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5">
                         </div>
                     </div>
                 </div>
@@ -218,6 +215,7 @@
         <div class="action-bar">
             <button id="btnCalcular" type="button">Calcular comparativo</button>
             <button id="btnExportar" type="button" class="hidden">Exportar planilha</button>
+            <button id="btnLimpar" type="button">Limpar campos</button>
         </div>
 
         <section class="results-section" id="results"></section>
@@ -227,7 +225,7 @@
         </footer>
     </div>
 
-    <script src="script.js?v=20260407"></script>
+    <script src="script.js?v=20260408b"></script>
     <script>
         (function () {
             var adBlocks = document.querySelectorAll('.adsbygoogle');
