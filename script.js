@@ -178,13 +178,6 @@
         };
     }
 
-    function calcImpostoLucrosDistribuidos(lucrosDistribuidos, aliquotaLucros) {
-        const lucros = Math.max(0, lucrosDistribuidos);
-        const aliquota = Math.max(0, aliquotaLucros || 0);
-        const baseTributavel = Math.max(0, lucros - 50000);
-        return baseTributavel * aliquota;
-    }
-
     function calcPjMensal(faturamento, inp) {
         const faturamentoMensal = Math.max(0, faturamento);
         const rbt12 = inp.rbt12 > 0 ? inp.rbt12 : (faturamentoMensal * 12);
@@ -195,8 +188,7 @@
         const tributos = inp.regime === 'simples'
             ? calcTributosSimples(faturamentoMensal, inp.anexoSimples, rbt12)
             : calcTributosPresumido(faturamentoMensal, inp.issAliquota);
-        const impostoLucros = calcImpostoLucrosDistribuidos(inp.lucrosDistribuidos, inp.aliquotaLucros);
-        const liquidoMensal = faturamentoMensal - tributos.total - inp.contador - inssSocio - irrfSocio.irrf - patronal + inp.lucrosDistribuidos - impostoLucros;
+        const liquidoMensal = faturamentoMensal - tributos.total - inp.contador - inssSocio - irrfSocio.irrf - patronal;
 
         return {
             rbt12: rbt12,
@@ -205,7 +197,6 @@
             inssSocio: inssSocio,
             irrfSocio: irrfSocio,
             patronal: patronal,
-            impostoLucros: impostoLucros,
             liquidoMensal: liquidoMensal,
             totalAnual: liquidoMensal * 12,
         };
@@ -229,8 +220,6 @@
             encargoPatronal:  parseFloat(document.getElementById('encargoPatronal').value) || 0,
             adicionaisPatronais: (parseFloat(document.getElementById('adicionaisPatronais').value) || 0) / 100,
             issAliquota:      (parseFloat(document.getElementById('issAliquota').value) || 0) / 100,
-            lucrosDistribuidos: parseFloat(document.getElementById('lucrosDistribuidos').value) || 0,
-            aliquotaLucros:   (parseFloat(document.getElementById('aliquotaLucros').value) || 0) / 100,
             contador:         parseFloat(document.getElementById('contador').value) || 0,
             vtDetalhado:      document.getElementById('vtToggle').getAttribute('aria-checked') === 'true',
             vr:               parseFloat(document.getElementById('vr').value) || 0,
@@ -252,8 +241,6 @@
             cfg.encargoPatronal = inp.regime === 'presumido' ? 0.20 : 0;
             cfg.adicionaisPatronais = 0;
             cfg.issAliquota = inp.regime === 'presumido' ? 0.02 : 0;
-            cfg.lucrosDistribuidos = 0;
-            cfg.aliquotaLucros = 0;
         }
         return cfg;
     }
@@ -396,7 +383,6 @@
                 inssSocio: pjCalc.inssSocio,
                 irrfSocio: pjCalc.irrfSocio,
                 patronal: pjCalc.patronal,
-                impostoLucros: pjCalc.impostoLucros,
                 liquidoMensal: pjLiquidoMensal,
                 totalAnual: pjTotalAnual,
             },
@@ -483,10 +469,9 @@
                +    lineItem('Tributos do regime (efetiva ' + (pj.tributos.aliquotaEfetiva * 100).toFixed(2).replace('.', ',') + '%)', pj.tributos.total, { negative: true })
                +    lineItem('Pró-labore', pj.proLabore)
                +    lineItem('INSS sócio (11%)', pj.inssSocio, { negative: true })
-               +    lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass })
-               +    lineItem('Encargos patronais', pj.patronal, { negative: true })
-               +    lineItem('Imposto sobre lucros distribuídos', pj.impostoLucros, { negative: true })
-             +    lineItem('Contador', inp.contador, { negative: true })
+               +    lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass });
+        if (pj.patronal > 0) html += lineItem('Encargos patronais', pj.patronal, { negative: true });
+        html += lineItem('Contador', inp.contador, { negative: true })
              +    lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
              + '</div>';
 
@@ -609,15 +594,15 @@
 
     // ── Toggle PJ simples / detalhado ────────────────────
     var pjToggle = document.getElementById('pjToggle');
-    var pjSimples = document.getElementById('pjSimples');
     var pjDetalhado = document.getElementById('pjDetalhado');
+    var pjHintSimples = document.getElementById('pjHintSimples');
 
     function togglePj() {
         var isOn = pjToggle.getAttribute('aria-checked') === 'true';
         pjToggle.setAttribute('aria-checked', String(!isOn));
         pjToggle.classList.toggle('active', !isOn);
-        pjSimples.classList.toggle('hidden', !isOn);
         pjDetalhado.classList.toggle('hidden', isOn);
+        pjHintSimples.classList.toggle('hidden', !isOn);
     }
 
     pjToggle.addEventListener('click', togglePj);
@@ -682,9 +667,7 @@
         add('Pró-labore', num(d.pj.proLabore));
         add('INSS sócio (11%)', '-' + num(d.pj.inssSocio));
         add('IRRF pró-labore (' + d.pj.irrfSocio.badge + ')', '-' + num(d.pj.irrfSocio.irrf));
-        add('Encargos patronais', '-' + num(d.pj.patronal));
-        add('Lucros distribuídos', num(d.inp.lucrosDistribuidos));
-        add('Imposto sobre lucros distribuídos', '-' + num(d.pj.impostoLucros));
+        if (d.pj.patronal > 0) add('Encargos patronais', '-' + num(d.pj.patronal));
         add('Contador', '-' + num(d.inp.contador));
         add('Líquido mensal PJ', num(d.pj.liquidoMensal));
         if (d.inp.regime === 'presumido') {

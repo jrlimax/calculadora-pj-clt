@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="google-adsense-account" content="ca-pub-5380924083549982">
     <title>Calculadora PJ vs CLT — 2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -124,39 +127,38 @@
                     <span class="card-tag tag--pj">PJ</span>
                     <h2>Pessoa Jurídica</h2>
                 </div>
+
+                <div class="input-group">
+                    <label for="faturamento">Faturamento bruto mensal</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">R$</span>
+                        <input type="number" id="faturamento" placeholder="0,00" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="regime">Regime tributário</label>
+                    <select id="regime">
+                        <option value="simples">Simples Nacional</option>
+                        <option value="presumido">Lucro Presumido</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="contador">Custo do contador mensal</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">R$</span>
+                        <input type="number" id="contador" placeholder="0,00" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+
                 <div class="input-group">
                     <div class="vt-header">
-                        <label>Modo PJ</label>
+                        <label>Configurações avançadas</label>
                         <div class="toggle" id="pjToggle" role="switch" aria-checked="false" tabindex="0">
                             <span class="toggle-label">Detalhado</span>
                             <div class="toggle-track"><div class="toggle-thumb"></div></div>
                         </div>
                     </div>
-                </div>
-
-                <div id="pjSimples">
-                    <div class="input-group">
-                        <label for="faturamento">Faturamento bruto mensal</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">R$</span>
-                            <input type="number" id="faturamento" placeholder="0,00" step="0.01" min="0">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label for="regime">Regime tributário</label>
-                        <select id="regime">
-                            <option value="simples">Simples Nacional</option>
-                            <option value="presumido">Lucro Presumido</option>
-                        </select>
-                        <span class="input-hint">No modo simples, usamos premissas automáticas para completar o cálculo</span>
-                    </div>
-                    <div class="input-group">
-                        <label for="contador">Custo do contador mensal</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">R$</span>
-                            <input type="number" id="contador" placeholder="0,00" step="0.01" min="0" value="0">
-                        </div>
-                    </div>
+                    <span class="input-hint" id="pjHintSimples">Premissas automáticas: pró-labore mínimo, Anexo III, sem patronal (Simples)</span>
                 </div>
 
                 <div id="pjDetalhado" class="hidden">
@@ -208,21 +210,6 @@
                             <span class="input-prefix">%</span>
                             <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5" value="2">
                         </div>
-                    </div>
-                    <div class="input-group">
-                        <label for="lucrosDistribuidos">Lucros distribuídos no mês</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">R$</span>
-                            <input type="number" id="lucrosDistribuidos" placeholder="0,00" step="0.01" min="0" value="0">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label for="aliquotaLucros">Alíquota sobre lucros acima de R$ 50.000 (%)</label>
-                        <div class="input-wrapper">
-                            <span class="input-prefix">%</span>
-                            <input type="number" id="aliquotaLucros" placeholder="0,00" step="0.01" min="0" value="0">
-                        </div>
-                        <span class="input-hint">Parâmetro para simular tributação de distribuição elevada</span>
                     </div>
                 </div>
             </div>
