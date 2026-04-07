@@ -232,8 +232,9 @@
             lucrosDistribuidos: parseFloat(document.getElementById('lucrosDistribuidos').value) || 0,
             aliquotaLucros:   (parseFloat(document.getElementById('aliquotaLucros').value) || 0) / 100,
             contador:         parseFloat(document.getElementById('contador').value) || 0,
-            vr:               parseFloat(document.getElementById('vr').value) || 0,
             vtDetalhado:      document.getElementById('vtToggle').getAttribute('aria-checked') === 'true',
+            vr:               parseFloat(document.getElementById('vr').value) || 0,
+            vrDiario:         parseFloat(document.getElementById('vrDiario').value) || 0,
             vtMensal:         parseFloat(document.getElementById('vtMensal').value) || 0,
             vtPassagem:       parseFloat(document.getElementById('vtPassagem').value) || 0,
             vtDias:           parseFloat(document.getElementById('vtDias').value) || 0,
@@ -335,13 +336,14 @@
         // ── CLT Mensal ──────────────────────────────────────
         const cltINSS = calcINSS(inp.salarioBruto);
         const cltIRRF = calcIRRF(inp.salarioBruto, cltINSS);
+        const vrFinal     = inp.vtDetalhado ? inp.vrDiario * inp.vtDias : inp.vr;
         const vtTotal    = inp.vtDetalhado
                          ? calcVtTotal(inp.vtPassagem, inp.vtDias)
                          : inp.vtMensal;
         const vtDesconto = calcVtDesconto(vtTotal, inp.salarioBruto);
         const vtLiquido  = vtTotal - vtDesconto;
         const cltLiquidoMensal = inp.salarioBruto - cltINSS - cltIRRF.irrf
-                                 + inp.vr + vtLiquido + inp.planoSaude + inp.outrosBeneficios;
+                                 + vrFinal + vtLiquido + inp.planoSaude + inp.outrosBeneficios;
 
         // ── CLT 13º salário líquido ─────────────────────────
         const dec13INSS  = calcINSS(inp.salarioBruto);
@@ -373,7 +375,7 @@
         const pjVence    = diffMensal > 0;
 
         renderResults({
-            inp: Object.assign({}, inp, pjCfg),
+            inp: Object.assign({}, inp, pjCfg, { vrFinal: vrFinal }),
             clt: {
                 inss: cltINSS,
                 irrf: cltIRRF,
@@ -403,7 +405,7 @@
                 diffMensal: Math.abs(diffMensal),
                 diffAnual: Math.abs(diffAnual),
                 breakevenPJ: calcBreakevenPJ(cltMesEquivalente, inp),
-                breakevenCLT: calcBreakevenCLT(pjLiquidoMensal, inp.vr, vtTotal, inp.planoSaude, inp.outrosBeneficios),
+                breakevenCLT: calcBreakevenCLT(pjLiquidoMensal, vrFinal, vtTotal, inp.planoSaude, inp.outrosBeneficios),
             },
         });
     }
@@ -454,11 +456,13 @@
              +    lineItem('Base IRRF', clt.irrf.base)
              +    lineItem('IRRF', clt.irrf.irrf, { negative: true, badge: clt.irrf.badge, badgeClass: clt.irrf.badgeClass });
 
-        if (inp.vr)               html += lineItem('VR / VA', inp.vr, { positive: true });
+        const vrExibir = inp.vtDetalhado ? inp.vrDiario * inp.vtDias : inp.vr;
+        const vrLabel  = inp.vtDetalhado ? 'VR / VA (' + fmt(inp.vrDiario) + ' × ' + inp.vtDias + 'd)' : 'VR / VA';
+        if (vrExibir)             html += lineItem(vrLabel, vrExibir, { positive: true });
         if (clt.vtTotal > 0) {
             var vtLabel = inp.vtDetalhado
                 ? 'VT (' + fmt(inp.vtPassagem) + ' × 2 × ' + inp.vtDias + 'd)'
-                : 'Vale-Transporte';
+                : 'Vale-Transporte (VT)';
             html += lineItem(vtLabel, clt.vtTotal, { positive: true });
             html += lineItem('Desconto VT (6%)', clt.vtDesconto, { negative: true });
         }
@@ -646,7 +650,9 @@
         add('INSS', '-' + num(d.clt.inss));
         add('Base IRRF', num(d.clt.irrf.base));
         add('IRRF (' + d.clt.irrf.badge + ')', '-' + num(d.clt.irrf.irrf));
-        if (d.inp.vr) add('VR / VA', num(d.inp.vr));
+        const vrExibir = d.inp.vtDetalhado ? d.inp.vrDiario * d.inp.vtDias : d.inp.vr;
+        const vrLabelCsv = d.inp.vtDetalhado ? 'VR / VA (' + d.inp.vrDiario.toFixed(2) + ' x ' + d.inp.vtDias + 'd)' : 'VR / VA';
+        if (vrExibir) add(vrLabelCsv, num(vrExibir));
         if (d.clt.vtTotal > 0) {
             add('Vale-Transporte', num(d.clt.vtTotal));
             add('Desconto VT (6%)', '-' + num(d.clt.vtDesconto));

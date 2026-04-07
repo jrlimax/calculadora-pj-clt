@@ -50,38 +50,47 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label for="vr">VR / VA mensal</label>
-                    <div class="input-wrapper">
-                        <span class="input-prefix">R$</span>
-                        <input type="number" id="vr" placeholder="0,00" step="0.01" min="0" value="0">
-                    </div>
-                </div>
-                <div class="input-group">
                     <div class="vt-header">
-                        <label>Vale-Transporte (VT)</label>
+                        <label>VR / VA &amp; Vale-Transporte (VT)</label>
                         <div class="toggle" id="vtToggle" role="switch" aria-checked="false" tabindex="0">
                             <span class="toggle-label">Detalhado</span>
                             <div class="toggle-track"><div class="toggle-thumb"></div></div>
                         </div>
                     </div>
+
                     <div id="vtSimples">
+                        <label style="font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;display:block">VR / VA mensal</label>
+                        <div class="input-wrapper" style="margin-bottom:0.6rem">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="vr" placeholder="0,00" step="0.01" min="0" value="0">
+                        </div>
+                        <label style="font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;display:block">VT mensal</label>
                         <div class="input-wrapper">
                             <span class="input-prefix">R$</span>
                             <input type="number" id="vtMensal" placeholder="0,00" step="0.01" min="0" value="0">
                         </div>
-                        <span class="input-hint">Valor total mensal que você recebe de VT</span>
+                        <span class="input-hint">Valores totais mensais que você recebe</span>
                     </div>
+
                     <div id="vtDetalhado" class="hidden">
-                        <div class="input-wrapper" style="margin-bottom:0.6rem">
+                        <label style="font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;display:block">VR / VA por dia</label>
+                        <div class="input-wrapper" style="margin-bottom:0.3rem">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="vrDiario" placeholder="25,00" step="0.01" min="0" value="0">
+                        </div>
+                        <span class="input-hint">Valor diário × dias úteis = VR/VA mensal</span>
+                        <label style="font-size:0.8rem;color:var(--muted);margin:0.7rem 0 0.3rem;display:block">Passagem por trecho (ida)</label>
+                        <div class="input-wrapper" style="margin-bottom:0.3rem">
                             <span class="input-prefix">R$</span>
                             <input type="number" id="vtPassagem" placeholder="4,50" step="0.01" min="0" value="0">
                         </div>
-                        <span class="input-hint">Valor de 1 trecho (ida) — ida e volta calculado automaticamente</span>
-                        <div class="input-wrapper" style="margin-top:0.6rem">
+                        <span class="input-hint">Ida e volta calculado automaticamente</span>
+                        <label style="font-size:0.8rem;color:var(--muted);margin:0.7rem 0 0.3rem;display:block">Dias úteis no mês</label>
+                        <div class="input-wrapper" style="margin-bottom:0.3rem">
                             <span class="input-prefix">📅</span>
                             <input type="number" id="vtDias" placeholder="22" step="1" min="0" max="31" value="22">
                         </div>
-                        <span class="input-hint">Dias úteis trabalhados no mês</span>
+                        <span class="input-hint">VT = passagem × 2 × dias | VR/VA = diário × dias</span>
                     </div>
                 </div>
                 <div class="input-group">
