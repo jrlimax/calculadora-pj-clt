@@ -115,9 +115,28 @@
                 <div class="input-group">
                     <label for="regime">Regime tributário</label>
                     <select id="regime">
-                        <option value="0.06">Simples Nacional (6%)</option>
-                        <option value="0.13">Lucro Presumido (13%)</option>
+                        <option value="simples">Simples Nacional</option>
+                        <option value="presumido">Lucro Presumido</option>
                     </select>
+                </div>
+                <div class="input-group">
+                    <label for="anexoSimples">Anexo do Simples (quando aplicável)</label>
+                    <select id="anexoSimples">
+                        <option value="III">Anexo III</option>
+                        <option value="V">Anexo V</option>
+                        <option value="IV">Anexo IV</option>
+                        <option value="I">Anexo I</option>
+                        <option value="II">Anexo II</option>
+                    </select>
+                    <span class="input-hint">Para Simples, a alíquota efetiva usa RBT12 e faixa do anexo selecionado</span>
+                </div>
+                <div class="input-group">
+                    <label for="rbt12">RBT12 (faturamento acumulado 12 meses)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">R$</span>
+                        <input type="number" id="rbt12" placeholder="0,00" step="0.01" min="0" value="0">
+                    </div>
+                    <span class="input-hint">Se deixar zerado, usamos faturamento mensal × 12 como aproximação</span>
                 </div>
                 <div class="input-group">
                     <label for="proLabore">Pró-labore mensal</label>
@@ -141,6 +160,28 @@
                         <input type="number" id="adicionaisPatronais" placeholder="0,00" step="0.01" min="0" value="0">
                     </div>
                     <span class="input-hint">Use para RAT/FAP e terceiros, quando aplicável</span>
+                </div>
+                <div class="input-group">
+                    <label for="issAliquota">ISS no Lucro Presumido (%)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="issAliquota" placeholder="2,00" step="0.01" min="0" max="5" value="2">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="lucrosDistribuidos">Lucros distribuídos no mês</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">R$</span>
+                        <input type="number" id="lucrosDistribuidos" placeholder="0,00" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="aliquotaLucros">Alíquota sobre lucros acima de R$ 50.000 (%)</label>
+                    <div class="input-wrapper">
+                        <span class="input-prefix">%</span>
+                        <input type="number" id="aliquotaLucros" placeholder="0,00" step="0.01" min="0" value="0">
+                    </div>
+                    <span class="input-hint">Parâmetro para simular tributação de distribuição elevada</span>
                 </div>
                 <div class="input-group">
                     <label for="contador">Custo do contador mensal</label>

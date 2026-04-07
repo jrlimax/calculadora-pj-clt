@@ -25,6 +25,49 @@
         { limite: Infinity,  aliquota: 0.275, deducao: 908.73 },
     ];
 
+    const TABELA_SIMPLES = {
+        I: [
+            { limite: 180000, aliquota: 0.04, deducao: 0 },
+            { limite: 360000, aliquota: 0.073, deducao: 5940 },
+            { limite: 720000, aliquota: 0.095, deducao: 13860 },
+            { limite: 1800000, aliquota: 0.107, deducao: 22500 },
+            { limite: 3600000, aliquota: 0.143, deducao: 87300 },
+            { limite: 4800000, aliquota: 0.19, deducao: 378000 },
+        ],
+        II: [
+            { limite: 180000, aliquota: 0.045, deducao: 0 },
+            { limite: 360000, aliquota: 0.078, deducao: 5940 },
+            { limite: 720000, aliquota: 0.1, deducao: 13860 },
+            { limite: 1800000, aliquota: 0.112, deducao: 22500 },
+            { limite: 3600000, aliquota: 0.147, deducao: 85500 },
+            { limite: 4800000, aliquota: 0.3, deducao: 720000 },
+        ],
+        III: [
+            { limite: 180000, aliquota: 0.06, deducao: 0 },
+            { limite: 360000, aliquota: 0.112, deducao: 9360 },
+            { limite: 720000, aliquota: 0.135, deducao: 17640 },
+            { limite: 1800000, aliquota: 0.16, deducao: 35640 },
+            { limite: 3600000, aliquota: 0.21, deducao: 125640 },
+            { limite: 4800000, aliquota: 0.33, deducao: 648000 },
+        ],
+        IV: [
+            { limite: 180000, aliquota: 0.045, deducao: 0 },
+            { limite: 360000, aliquota: 0.09, deducao: 8100 },
+            { limite: 720000, aliquota: 0.102, deducao: 12420 },
+            { limite: 1800000, aliquota: 0.14, deducao: 39780 },
+            { limite: 3600000, aliquota: 0.22, deducao: 183780 },
+            { limite: 4800000, aliquota: 0.33, deducao: 828000 },
+        ],
+        V: [
+            { limite: 180000, aliquota: 0.155, deducao: 0 },
+            { limite: 360000, aliquota: 0.18, deducao: 4500 },
+            { limite: 720000, aliquota: 0.195, deducao: 9900 },
+            { limite: 1800000, aliquota: 0.205, deducao: 17100 },
+            { limite: 3600000, aliquota: 0.23, deducao: 62100 },
+            { limite: 4800000, aliquota: 0.305, deducao: 540000 },
+        ],
+    };
+
     /* ══════════════════════════════════════════════════════
        Funções de cálculo
        ══════════════════════════════════════════════════════ */
@@ -92,6 +135,82 @@
         return Math.max(0, proLabore) * totalAliquota;
     }
 
+    function calcAliquotaEfetivaSimples(anexo, rbt12) {
+        const tabela = TABELA_SIMPLES[anexo] || TABELA_SIMPLES.III;
+        const receita12 = Math.max(0, rbt12);
+        const referencia = receita12 > 0 ? receita12 : 180000;
+        const faixa = tabela.find(function (f) { return referencia <= f.limite; }) || tabela[tabela.length - 1];
+        const aliquotaEfetiva = Math.max(0, ((referencia * faixa.aliquota) - faixa.deducao) / referencia);
+        return { faixa, aliquotaEfetiva };
+    }
+
+    function calcTributosSimples(faturamento, anexo, rbt12) {
+        const simples = calcAliquotaEfetivaSimples(anexo, rbt12);
+        return {
+            tipo: 'simples',
+            anexo: anexo,
+            aliquotaEfetiva: simples.aliquotaEfetiva,
+            total: Math.max(0, faturamento) * simples.aliquotaEfetiva,
+        };
+    }
+
+    function calcTributosPresumido(faturamento, issAliquota) {
+        const receita = Math.max(0, faturamento);
+        const basePresumida = receita * 0.32;
+        const irpj = basePresumida * 0.15;
+        const irpjAdicional = Math.max(0, basePresumida - 20000) * 0.10;
+        const csll = basePresumida * 0.09;
+        const pis = receita * 0.0065;
+        const cofins = receita * 0.03;
+        const iss = receita * Math.max(0, issAliquota || 0);
+        const total = irpj + irpjAdicional + csll + pis + cofins + iss;
+
+        return {
+            tipo: 'presumido',
+            aliquotaEfetiva: receita > 0 ? total / receita : 0,
+            irpj: irpj,
+            irpjAdicional: irpjAdicional,
+            csll: csll,
+            pis: pis,
+            cofins: cofins,
+            iss: iss,
+            total: total,
+        };
+    }
+
+    function calcImpostoLucrosDistribuidos(lucrosDistribuidos, aliquotaLucros) {
+        const lucros = Math.max(0, lucrosDistribuidos);
+        const aliquota = Math.max(0, aliquotaLucros || 0);
+        const baseTributavel = Math.max(0, lucros - 50000);
+        return baseTributavel * aliquota;
+    }
+
+    function calcPjMensal(faturamento, inp) {
+        const faturamentoMensal = Math.max(0, faturamento);
+        const rbt12 = inp.rbt12 > 0 ? inp.rbt12 : (faturamentoMensal * 12);
+        const proLaboreCalculado = Math.max(inp.proLabore, SALARIO_MINIMO);
+        const inssSocio = calcINSSProLabore(proLaboreCalculado);
+        const irrfSocio = calcIRRF(proLaboreCalculado, inssSocio);
+        const patronal = calcEncargosPatronais(proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais);
+        const tributos = inp.regime === 'simples'
+            ? calcTributosSimples(faturamentoMensal, inp.anexoSimples, rbt12)
+            : calcTributosPresumido(faturamentoMensal, inp.issAliquota);
+        const impostoLucros = calcImpostoLucrosDistribuidos(inp.lucrosDistribuidos, inp.aliquotaLucros);
+        const liquidoMensal = faturamentoMensal - tributos.total - inp.contador - inssSocio - irrfSocio.irrf - patronal + inp.lucrosDistribuidos - impostoLucros;
+
+        return {
+            rbt12: rbt12,
+            proLabore: proLaboreCalculado,
+            tributos: tributos,
+            inssSocio: inssSocio,
+            irrfSocio: irrfSocio,
+            patronal: patronal,
+            impostoLucros: impostoLucros,
+            liquidoMensal: liquidoMensal,
+            totalAnual: liquidoMensal * 12,
+        };
+    }
+
     /** Formata valor como moeda BRL */
     function fmt(valor) {
         return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -102,10 +221,15 @@
         return {
             salarioBruto:     parseFloat(document.getElementById('salarioBruto').value) || 0,
             faturamento:      parseFloat(document.getElementById('faturamento').value) || 0,
-            regime:           parseFloat(document.getElementById('regime').value),
+            regime:           document.getElementById('regime').value,
+            anexoSimples:     document.getElementById('anexoSimples').value,
+            rbt12:            parseFloat(document.getElementById('rbt12').value) || 0,
             proLabore:        parseFloat(document.getElementById('proLabore').value) || 0,
             encargoPatronal:  parseFloat(document.getElementById('encargoPatronal').value) || 0,
             adicionaisPatronais: (parseFloat(document.getElementById('adicionaisPatronais').value) || 0) / 100,
+            issAliquota:      (parseFloat(document.getElementById('issAliquota').value) || 0) / 100,
+            lucrosDistribuidos: parseFloat(document.getElementById('lucrosDistribuidos').value) || 0,
+            aliquotaLucros:   (parseFloat(document.getElementById('aliquotaLucros').value) || 0) / 100,
             contador:         parseFloat(document.getElementById('contador').value) || 0,
             vr:               parseFloat(document.getElementById('vr').value) || 0,
             vtDetalhado:      document.getElementById('vtToggle').getAttribute('aria-checked') === 'true',
@@ -154,13 +278,16 @@
     }
 
     /** Faturamento PJ mínimo para empatar com CLT */
-    function calcBreakevenPJ(cltMesEquivalente, regime, contador, proLabore, encargoPatronal, adicionaisPatronais) {
-        const pjINSSSocio = calcINSSProLabore(proLabore);
-        const pjIRRFSocio = calcIRRF(proLabore, pjINSSSocio).irrf;
-        const pjPatronal = calcEncargosPatronais(proLabore, encargoPatronal, adicionaisPatronais);
-        const divisor = 1 - regime;
-        if (divisor <= 0) return Infinity;
-        return (cltMesEquivalente + contador + pjINSSSocio + pjIRRFSocio + pjPatronal) / divisor;
+    function calcBreakevenPJ(cltMesEquivalente, inp) {
+        let lo = 0;
+        let hi = 500000;
+        for (let i = 0; i < 100; i++) {
+            const mid = (lo + hi) / 2;
+            const pjMid = calcPjMensal(mid, inp);
+            if (pjMid.liquidoMensal < cltMesEquivalente) lo = mid;
+            else hi = mid;
+        }
+        return Math.ceil((lo + hi) / 2 * 100) / 100;
     }
 
     /** Salário CLT mínimo para empatar com PJ (busca binária) */
@@ -218,13 +345,9 @@
         const cltMesEquivalente = cltTotalAnual / 12;
 
         // ── PJ Mensal ───────────────────────────────────────
-        const proLaboreCalculado = Math.max(inp.proLabore, SALARIO_MINIMO);
-        const pjImposto          = inp.faturamento * inp.regime;
-        const pjINSSSocio        = calcINSSProLabore(proLaboreCalculado);
-        const pjIRRFSocio        = calcIRRF(proLaboreCalculado, pjINSSSocio);
-        const pjPatronal         = calcEncargosPatronais(proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais);
-        const pjLiquidoMensal    = inp.faturamento - pjImposto - inp.contador - pjINSSSocio - pjIRRFSocio.irrf - pjPatronal;
-        const pjTotalAnual    = pjLiquidoMensal * 12;
+        const pjCalc = calcPjMensal(inp.faturamento, inp);
+        const pjLiquidoMensal = pjCalc.liquidoMensal;
+        const pjTotalAnual = pjCalc.totalAnual;
 
         // ── Veredicto ───────────────────────────────────────
         const diffMensal = pjLiquidoMensal - cltMesEquivalente;
@@ -247,11 +370,13 @@
                 mesEquivalente: cltMesEquivalente,
             },
             pj: {
-                imposto: pjImposto,
-                proLabore: proLaboreCalculado,
-                inssSocio: pjINSSSocio,
-                irrfSocio: pjIRRFSocio,
-                patronal: pjPatronal,
+                rbt12: pjCalc.rbt12,
+                tributos: pjCalc.tributos,
+                proLabore: pjCalc.proLabore,
+                inssSocio: pjCalc.inssSocio,
+                irrfSocio: pjCalc.irrfSocio,
+                patronal: pjCalc.patronal,
+                impostoLucros: pjCalc.impostoLucros,
                 liquidoMensal: pjLiquidoMensal,
                 totalAnual: pjTotalAnual,
             },
@@ -259,7 +384,7 @@
                 pjVence,
                 diffMensal: Math.abs(diffMensal),
                 diffAnual: Math.abs(diffAnual),
-                breakevenPJ: calcBreakevenPJ(cltMesEquivalente, inp.regime, inp.contador, proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais),
+                breakevenPJ: calcBreakevenPJ(cltMesEquivalente, inp),
                 breakevenCLT: calcBreakevenCLT(pjLiquidoMensal, inp.vr, vtTotal, inp.planoSaude, inp.outrosBeneficios),
             },
         });
@@ -297,7 +422,9 @@
 
     function renderResults(data) {
         const { inp, clt, pj, veredicto } = data;
-        const regimePercent = inp.regime === 0.06 ? '6%' : '13%';
+        const regimeLabel = inp.regime === 'simples'
+            ? ('Simples — Anexo ' + inp.anexoSimples)
+            : 'Lucro Presumido';
 
         let html = '<div class="results-grid">';
 
@@ -326,15 +453,29 @@
         // ── PJ Mensal ───────────────────────────────────
         html += '<div class="result-card">'
              +    '<div class="card-title card-title--pj">PJ — Mensal</div>'
+               +    '<div class="line-item"><span class="label">Regime</span><span class="value">' + esc(regimeLabel) + '</span></div>'
              +    lineItem('Faturamento bruto', inp.faturamento)
-             +    lineItem('Imposto (' + regimePercent + ')', pj.imposto, { negative: true })
+               +    lineItem('Tributos do regime (efetiva ' + (pj.tributos.aliquotaEfetiva * 100).toFixed(2).replace('.', ',') + '%)', pj.tributos.total, { negative: true })
                +    lineItem('Pró-labore', pj.proLabore)
                +    lineItem('INSS sócio (11%)', pj.inssSocio, { negative: true })
                +    lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass })
                +    lineItem('Encargos patronais', pj.patronal, { negative: true })
+               +    lineItem('Imposto sobre lucros distribuídos', pj.impostoLucros, { negative: true })
              +    lineItem('Contador', inp.contador, { negative: true })
              +    lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
              + '</div>';
+
+           if (inp.regime === 'presumido') {
+              html += '<div class="result-card">'
+                  +    '<div class="card-title card-title--pj">PJ — Detalhe Lucro Presumido</div>'
+                  +    lineItem('IRPJ (15%)', pj.tributos.irpj, { negative: true })
+                  +    lineItem('Adicional IRPJ (10%)', pj.tributos.irpjAdicional, { negative: true })
+                  +    lineItem('CSLL', pj.tributos.csll, { negative: true })
+                  +    lineItem('PIS', pj.tributos.pis, { negative: true })
+                  +    lineItem('COFINS', pj.tributos.cofins, { negative: true })
+                  +    lineItem('ISS', pj.tributos.iss, { negative: true })
+                  + '</div>';
+           }
 
         // ── CLT Anual ───────────────────────────────────
         html += '<div class="result-card result-card--annual">'
@@ -486,16 +627,29 @@
         blank();
 
         // PJ Mensal
-        var regimeLabel = d.inp.regime === 0.06 ? '6%' : '13%';
+        var regimeLabel = d.inp.regime === 'simples' ? ('Simples - Anexo ' + d.inp.anexoSimples) : 'Lucro Presumido';
         add('PJ — MENSAL', '');
+        add('Regime', regimeLabel);
+        add('RBT12 usado', num(d.pj.rbt12));
         add('Faturamento bruto', num(d.inp.faturamento));
-        add('Imposto (' + regimeLabel + ')', '-' + num(d.pj.imposto));
+        add('Tributos do regime', '-' + num(d.pj.tributos.total));
+        add('Aliquota efetiva do regime (%)', num(d.pj.tributos.aliquotaEfetiva * 100));
         add('Pró-labore', num(d.pj.proLabore));
         add('INSS sócio (11%)', '-' + num(d.pj.inssSocio));
         add('IRRF pró-labore (' + d.pj.irrfSocio.badge + ')', '-' + num(d.pj.irrfSocio.irrf));
         add('Encargos patronais', '-' + num(d.pj.patronal));
+        add('Lucros distribuídos', num(d.inp.lucrosDistribuidos));
+        add('Imposto sobre lucros distribuídos', '-' + num(d.pj.impostoLucros));
         add('Contador', '-' + num(d.inp.contador));
         add('Líquido mensal PJ', num(d.pj.liquidoMensal));
+        if (d.inp.regime === 'presumido') {
+            add('IRPJ', '-' + num(d.pj.tributos.irpj));
+            add('Adicional IRPJ', '-' + num(d.pj.tributos.irpjAdicional));
+            add('CSLL', '-' + num(d.pj.tributos.csll));
+            add('PIS', '-' + num(d.pj.tributos.pis));
+            add('COFINS', '-' + num(d.pj.tributos.cofins));
+            add('ISS', '-' + num(d.pj.tributos.iss));
+        }
         blank();
 
         // Veredicto
