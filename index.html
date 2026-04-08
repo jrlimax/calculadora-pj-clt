@@ -135,6 +135,7 @@
                 <div class="input-group">
                     <label for="regime">Regime tributário</label>
                     <select id="regime">
+                        <option value="mei" selected>MEI</option>
                         <option value="simples">Simples Nacional</option>
                         <option value="presumido">Lucro Presumido</option>
                     </select>
@@ -155,7 +156,7 @@
                             <div class="toggle-track"><div class="toggle-thumb"></div></div>
                         </div>
                     </div>
-                    <span class="input-hint" id="pjHintSimples">Premissas automáticas: pró-labore mínimo, Anexo III, sem patronal (Simples)</span>
+                    <span class="input-hint" id="pjHintSimples">Premissas automáticas conforme regime selecionado</span>
                 </div>
 
                 <div id="pjDetalhado" class="hidden">
@@ -214,11 +215,14 @@
 
         <div class="action-bar">
             <button id="btnCalcular" type="button">Calcular comparativo</button>
-            <button id="btnExportar" type="button" class="hidden">Exportar planilha</button>
             <button id="btnLimpar" type="button">Limpar campos</button>
         </div>
 
         <section class="results-section" id="results"></section>
+
+        <div class="action-bar" id="exportBar" style="display:none">
+            <button id="btnExportar" type="button">Exportar planilha</button>
+        </div>
 
         <footer class="disclaimer" id="disclaimer">
             <p>Tabelas INSS e IRRF 2026. IR aplica desconto progressivo (Lei 15.270/2025): isenção total até R$ 5.000 de base, parcial até R$ 7.350. No cenário PJ, INSS do sócio e encargos patronais são parametrizáveis. FGTS incluso para comparação — não é saque imediato. Consulte um contador para análise completa.</p>

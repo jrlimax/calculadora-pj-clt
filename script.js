@@ -180,16 +180,31 @@
         };
     }
 
+    /** DAS fixo do MEI 2026: 5% salário mínimo (INSS) + R$ 5 ISS (serviços) */
+    function calcTributosMei() {
+        const dasMensal = (SALARIO_MINIMO * 0.05) + 5;
+        return {
+            tipo: 'mei',
+            aliquotaEfetiva: 0,
+            total: dasMensal,
+            das: dasMensal,
+        };
+    }
+
     function calcPjMensal(faturamento, inp) {
         const faturamentoMensal = Math.max(0, faturamento);
         const rbt12 = inp.rbt12 > 0 ? inp.rbt12 : (faturamentoMensal * 12);
-        const proLaboreCalculado = Math.max(inp.proLabore, SALARIO_MINIMO);
-        const inssSocio = calcINSSProLabore(proLaboreCalculado);
-        const irrfSocio = calcIRRF(proLaboreCalculado, inssSocio);
-        const patronal = calcEncargosPatronais(proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais);
-        const tributos = inp.regime === 'simples'
-            ? calcTributosSimples(faturamentoMensal, inp.anexoSimples, rbt12)
-            : calcTributosPresumido(faturamentoMensal, inp.issAliquota);
+        const isMei = inp.regime === 'mei';
+        const proLaboreCalculado = isMei ? 0 : Math.max(inp.proLabore, SALARIO_MINIMO);
+        // MEI: INSS já está embutido no DAS, sócio não recolhe separado
+        const inssSocio = isMei ? 0 : calcINSSProLabore(proLaboreCalculado);
+        const irrfSocio = isMei ? { irrf: 0, badge: 'isento (mei)', badgeClass: 'badge--isento' } : calcIRRF(proLaboreCalculado, inssSocio);
+        const patronal  = isMei ? 0 : calcEncargosPatronais(proLaboreCalculado, inp.encargoPatronal, inp.adicionaisPatronais);
+        const tributos  = isMei
+            ? calcTributosMei()
+            : (inp.regime === 'simples'
+                ? calcTributosSimples(faturamentoMensal, inp.anexoSimples, rbt12)
+                : calcTributosPresumido(faturamentoMensal, inp.issAliquota));
         const liquidoMensal = faturamentoMensal - tributos.total - inp.contador - inssSocio - irrfSocio.irrf - patronal;
 
         return {
@@ -239,7 +254,7 @@
         if (!inp.pjDetalhado) {
             cfg.anexoSimples = 'III';
             cfg.rbt12 = inp.faturamento > 0 ? inp.faturamento * 12 : 0;
-            cfg.proLabore = SALARIO_MINIMO;
+            cfg.proLabore = inp.regime === 'mei' ? 0 : SALARIO_MINIMO;
             cfg.encargoPatronal = inp.regime === 'presumido' ? 0.20 : 0;
             cfg.adicionaisPatronais = 0;
             cfg.issAliquota = inp.regime === 'presumido' ? 0.02 : 0;
@@ -326,6 +341,11 @@
             alert('O salário CLT não pode ser inferior ao salário mínimo de ' + fmt(SALARIO_MINIMO) + '.');
             document.getElementById('salarioBruto').focus();
             return;
+        }
+
+        const MEI_LIMITE_MENSAL = 6750;
+        if (inp.regime === 'mei' && inp.faturamento > MEI_LIMITE_MENSAL) {
+            alert('Atenção: o faturamento informado (' + fmt(inp.faturamento) + '/mês) ultrapassa o limite do MEI de ' + fmt(MEI_LIMITE_MENSAL) + '/mês (R$ 81k/ano).\nO cálculo foi feito como MEI, mas nesse faturamento você precisaria migrar para Simples Nacional.');
         }
 
         // ── CLT Mensal ──────────────────────────────────────
@@ -436,9 +456,11 @@
 
     function renderResults(data) {
         const { inp, clt, pj, veredicto } = data;
-        const regimeLabel = inp.regime === 'simples'
-            ? ('Simples — Anexo ' + inp.anexoSimples)
-            : 'Lucro Presumido';
+        const regimeLabel = inp.regime === 'mei'
+            ? 'MEI'
+            : (inp.regime === 'simples'
+                ? ('Simples Nacional — Anexo ' + inp.anexoSimples)
+                : 'Lucro Presumido');
 
         let html = '<div class="results-grid">';
 
@@ -469,18 +491,21 @@
         // ── PJ Mensal ───────────────────────────────────
         html += '<div class="result-card">'
              +    '<div class="card-title card-title--pj">PJ — Mensal</div>'
-               +    '<div class="line-item"><span class="label">Regime</span><span class="value">' + esc(regimeLabel) + '</span></div>'
-                         +    (inp.pjDetalhado
-                                        ? ''
-                                  : '<div class="line-item"><span class="label">Modo simples</span><span class="value">Premissas automáticas ativas</span></div>')
+             +    '<div class="line-item"><span class="label">Regime</span><span class="value">' + esc(regimeLabel) + '</span></div>'
              +    lineItem('Faturamento bruto', inp.faturamento)
-               +    lineItem('Tributos do regime (efetiva ' + (pj.tributos.aliquotaEfetiva * 100).toFixed(2).replace('.', ',') + '%)', pj.tributos.total, { negative: true })
-               +    lineItem('Pró-labore', pj.proLabore)
-               +    lineItem('INSS sócio (11%)', pj.inssSocio, { negative: true })
-               +    lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass });
-        if (pj.patronal > 0) html += lineItem('Encargos patronais', pj.patronal, { negative: true });
-        html += lineItem('Contador', inp.contador, { negative: true })
-             +    lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
+             +    (inp.regime === 'mei'
+                    ? lineItem('DAS mensal (fixo)', pj.tributos.total, { negative: true })
+                    : lineItem('Tributos do regime (efetiva ' + (pj.tributos.aliquotaEfetiva * 100).toFixed(2).replace('.', ',') + '%)', pj.tributos.total, { negative: true }));
+
+        if (inp.pjDetalhado) {
+            html += lineItem('Pró-labore', pj.proLabore)
+                 +  lineItem('INSS sócio (11%)', pj.inssSocio, { negative: true })
+                 +  lineItem('IRRF pró-labore', pj.irrfSocio.irrf, { negative: true, badge: pj.irrfSocio.badge, badgeClass: pj.irrfSocio.badgeClass });
+            if (pj.patronal > 0) html += lineItem('Encargos patronais', pj.patronal, { negative: true });
+        }
+
+        if (inp.contador) html += lineItem('Contador', inp.contador, { negative: true });
+        html += lineItem('Líquido mensal', pj.liquidoMensal, { isTotal: true, totalClass: 'pj' })
              + '</div>';
 
         if (inp.regime === 'presumido' && inp.pjDetalhado) {
@@ -563,7 +588,7 @@
         section.classList.add('visible');
 
         document.getElementById('disclaimer').classList.add('visible');
-        document.getElementById('btnExportar').classList.remove('hidden');
+        document.getElementById('exportBar').style.display = '';
 
         // Guarda dados para exportação
         window.__lastCalc = data;
@@ -584,7 +609,7 @@
         for (var i = 0; i < ids.length; i++) {
             document.getElementById(ids[i]).value = '';
         }
-        document.getElementById('regime').value = 'simples';
+        document.getElementById('regime').value = 'mei';
         document.getElementById('anexoSimples').value = 'III';
         document.getElementById('encargoPatronal').value = '0';
 
@@ -593,7 +618,7 @@
         section.innerHTML = '';
         section.classList.remove('visible');
         document.getElementById('disclaimer').classList.remove('visible');
-        document.getElementById('btnExportar').classList.add('hidden');
+        document.getElementById('exportBar').style.display = 'none';
         window.__lastCalc = null;
     }
 
@@ -694,17 +719,21 @@
         blank();
 
         // PJ Mensal
-        var regimeLabel = d.inp.regime === 'simples' ? ('Simples - Anexo ' + d.inp.anexoSimples) : 'Lucro Presumido';
+        var regimeLabel = d.inp.regime === 'mei' ? 'MEI' : (d.inp.regime === 'simples' ? ('Simples - Anexo ' + d.inp.anexoSimples) : 'Lucro Presumido');
         add('PJ — MENSAL', '');
         add('Regime', regimeLabel);
-        add('RBT12 usado', num(d.pj.rbt12));
         add('Faturamento bruto', num(d.inp.faturamento));
-        add('Tributos do regime', '-' + num(d.pj.tributos.total));
-        add('Aliquota efetiva do regime (%)', num(d.pj.tributos.aliquotaEfetiva * 100));
-        add('Pró-labore', num(d.pj.proLabore));
-        add('INSS sócio (11%)', '-' + num(d.pj.inssSocio));
-        add('IRRF pró-labore (' + d.pj.irrfSocio.badge + ')', '-' + num(d.pj.irrfSocio.irrf));
-        if (d.pj.patronal > 0) add('Encargos patronais', '-' + num(d.pj.patronal));
+        if (d.inp.regime === 'mei') {
+            add('DAS mensal (fixo)', '-' + num(d.pj.tributos.total));
+        } else {
+            add('RBT12 usado', num(d.pj.rbt12));
+            add('Tributos do regime', '-' + num(d.pj.tributos.total));
+            add('Aliquota efetiva do regime (%)', num(d.pj.tributos.aliquotaEfetiva * 100));
+            add('Pró-labore', num(d.pj.proLabore));
+            add('INSS sócio (11%)', '-' + num(d.pj.inssSocio));
+            add('IRRF pró-labore (' + d.pj.irrfSocio.badge + ')', '-' + num(d.pj.irrfSocio.irrf));
+            if (d.pj.patronal > 0) add('Encargos patronais', '-' + num(d.pj.patronal));
+        }
         add('Contador', '-' + num(d.inp.contador));
         add('Líquido mensal PJ', num(d.pj.liquidoMensal));
         if (d.inp.regime === 'presumido') {
